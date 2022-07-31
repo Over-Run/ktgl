@@ -1,7 +1,8 @@
 package org.overrun.ktgl.gl
 
 import org.joml.Vector4fc
-import org.lwjgl.opengl.GL11C
+import org.lwjgl.opengl.GL20C.glClearColor
+import org.lwjgl.opengl.GL20C.glUseProgram
 
 /**
  * @author squid233
@@ -12,6 +13,13 @@ class GLStateMgr {
     private var clearG = 0F
     private var clearB = 0F
     private var clearA = 0F
+    var program = 0
+        set(value) {
+            if (field != value) {
+                field = value
+                glUseProgram(value)
+            }
+        }
 
     fun setClearColor(clearColor: Vector4fc) {
         setClearColor(clearColor.x(), clearColor.y(), clearColor.z(), clearColor.w())
@@ -27,7 +35,7 @@ class GLStateMgr {
             clearG = g
             clearB = b
             clearA = a
-            GL11C.glClearColor(r, g, b, a)
+            glClearColor(r, g, b, a)
         }
     }
 }

@@ -17,14 +17,23 @@ class Scene(name: String) {
         private set
     val backgroundColor = Vector4f()
     var clearBit = GLClearBit.NONE
-    private val gameObjects = _GameObjects()
+    private val gameObjects = GameObjects()
 
-    class _GameObjects {
-        private val objects = LinkedHashMap<String, GameObject>()
+    class GameObjects {
+        private val objects = LinkedHashMap<String, GameObjectImpl>()
 
-        fun add(name: String): GameObject = GameObject().also { objects[name] = it }
-        fun add(name: String, block: GameObject.() -> Unit): GameObject = add(name).apply(block)
-        operator fun String.invoke(block: GameObject.() -> Unit): GameObject = add(this, block)
+        fun add(name: String): GameObjectImpl {
+            if (objects.containsKey(name)) {
+                return objects[name]!!
+            }
+            return GameObjectImpl().also { objects[name] = it }
+        }
+
+        fun add(name: String, block: GameObjectImpl.() -> Unit): GameObjectImpl =
+            add(name).apply(block)
+
+        operator fun String.invoke(block: GameObjectImpl.() -> Unit): GameObjectImpl =
+            add(this, block)
     }
 
     fun rename(project: Project, name: String) {
@@ -32,7 +41,7 @@ class Scene(name: String) {
         project.scenes[name] = this
     }
 
-    fun gameObjects(block: _GameObjects.() -> Unit) {
+    fun gameObjects(block: GameObjects.() -> Unit) {
         block(gameObjects)
     }
 

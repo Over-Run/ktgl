@@ -10,6 +10,8 @@ import org.overrun.ktgl.scene.Scene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+var currentProject: Project? = null
+
 /**
  * A ktgl project.
  *
@@ -114,6 +116,7 @@ class Project(name: String) : Runnable, AutoCloseable {
      * Run this project.
      */
     override fun run() {
+        currentProject = this
         (if (errorCallback != null) GLFWErrorCallback.create { error, description ->
             errorCallback?.invoke(
                 error,

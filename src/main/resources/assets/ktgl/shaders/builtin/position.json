@@ -1,0 +1,26 @@
+{
+    "name": "Position Shader",
+    "vertex": "ktgl:shaders/builtin/position",
+    "fragment": "ktgl:shaders/builtin/position",
+    "input": {
+        "position": {
+            "name": "position",
+            "size": 3
+        }
+    },
+    "uniforms": {
+        "projection": {
+            "name": "ProjMat"
+        },
+        "view": {
+            "name": "ViewMat"
+        },
+        "model": {
+            "name": "ModelMat"
+        },
+        "colorModulator": {
+            "name": "ColorModulator",
+            "value": [1.0, 1.0, 1.0, 1.0]
+        }
+    }
+}

@@ -67,7 +67,7 @@ class Window(
     }
 
     fun moveToCenter(monitor: Long) {
-        glfwGetVideoMode(monitor)?.run { moveToCenter(width(), height()) }
+        glfwGetVideoMode(monitor)?.apply { moveToCenter(width(), height()) }
     }
 
     fun moveToCenter(vidModeWidth: Int, vidModeHeight: Int) {
