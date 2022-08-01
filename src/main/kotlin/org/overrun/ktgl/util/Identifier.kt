@@ -1,5 +1,7 @@
 package org.overrun.ktgl.util
 
+infix fun String.toFile(type: ResourceType) = Identifier.toFile(type, this)
+
 /**
  * @author squid233
  * @since 0.1.0
@@ -12,7 +14,7 @@ class Identifier private constructor(identifier: List<String>) {
         fun toFile(type: ResourceType, identifier: String): String =
             identifier.split(':', limit = 2).let {
                 if (it.size > 1) "$type/${it[0]}/${it[1]}"
-                "$type/$DEFAULT_NAMESPACE/${it[0]}"
+                else "$type/$DEFAULT_NAMESPACE/${it[0]}"
             }
     }
 

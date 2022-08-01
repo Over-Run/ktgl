@@ -10,30 +10,32 @@ import java.net.URL
  * @author squid233
  * @since 0.1.0
  */
-interface IFileProvider {
+fun interface IFileProvider {
     fun getUrl(name: String): URL?
-    fun toStream(name: String): InputStream? = getUrl(name)?.run {
-        try {
-            openStream()
-        } catch (e: IOException) {
-            null
-        }
+    fun toStream(name: String): Result<InputStream> {
+        val url = getUrl(name)
+        return url?.run {
+            try {
+                Result.success(openStream())
+            } catch (e: IOException) {
+                Result.failure(e)
+            }
+        } ?: Result.failure(IllegalStateException("getUrl(name) is null! name: $name"))
     }
 
     private fun Reader.buildLines(): String = StringBuilder().also { forEachLine(it::appendLine) }.toString()
 
-    fun useLines(name: String): String =
-        toStream(name)!!.bufferedReader().buildLines()
+    fun useLines(name: String): String = toStream(name).getOrThrow().bufferedReader().buildLines()
 
     fun useLinesOrNull(name: String): String? =
-        toStream(name)?.bufferedReader()?.buildLines()
+        toStream(name).getOrNull()?.bufferedReader()?.buildLines()
 
     companion object {
         @JvmField
-        val LOCAL = object : IFileProvider {
-            override fun getUrl(name: String): URL = File(name).toURI().toURL()
-            override fun toStream(name: String): InputStream = getUrl(name).openStream()
-        }
+        val LOCAL = IFileProvider { name -> File(name).toURI().toURL() }
+
+        @JvmField
+        val SYSTEM = IFileProvider(ClassLoader::getSystemResource);
 
         @JvmStatic
         fun ofCaller(): IFileProvider =
@@ -43,8 +45,6 @@ interface IFileProvider {
         fun ofClass(clazz: Class<*>): IFileProvider = ofClassLoader(clazz.classLoader)
 
         @JvmStatic
-        fun ofClassLoader(classLoader: ClassLoader): IFileProvider = object : IFileProvider {
-            override fun getUrl(name: String): URL? = classLoader.getResource(name)
-        }
+        fun ofClassLoader(classLoader: ClassLoader) = IFileProvider(classLoader::getResource)
     }
 }

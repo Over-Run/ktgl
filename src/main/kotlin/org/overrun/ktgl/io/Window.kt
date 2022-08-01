@@ -66,7 +66,7 @@ class Window(
         glfwSetWindowMonitor(handle, monitor, xpos, ypos, width, height, refreshRate)
     }
 
-    fun moveToCenter(monitor: Long) {
+    infix fun moveToCenter(monitor: Long) {
         glfwGetVideoMode(monitor)?.apply { moveToCenter(width(), height()) }
     }
 
@@ -96,6 +96,10 @@ class Window(
     }
 
     fun makeCtxCurr() = glfwMakeContextCurrent(handle)
+
+    /**
+     * @see glfwSwapInterval
+     */
     infix fun swapInterval(interval: Int) = glfwSwapInterval(interval)
 
     fun show() = glfwShowWindow(handle)
@@ -103,12 +107,12 @@ class Window(
 
     fun shouldClose(): Boolean = glfwWindowShouldClose(handle)
 
-    fun swapBuffer() = glfwSwapBuffers(handle)
+    fun swapBuffers() = glfwSwapBuffers(handle)
 
     fun pollEvents() = glfwPollEvents()
     fun waitEvents() = glfwWaitEvents()
 
-    fun setShouldClose(value: Boolean) = glfwSetWindowShouldClose(handle, value)
+    infix fun setShouldClose(value: Boolean) = glfwSetWindowShouldClose(handle, value)
 
     fun withHandle(block: (handle: Long) -> Unit) {
         block(handle)

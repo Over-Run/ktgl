@@ -8,16 +8,16 @@ import org.overrun.ktgl.gl.GLClearBit
 /**
  * A ktgl scene.
  *
- * @param[name] the name of the scene
+ * @param[id] the id of the scene
  * @author squid233
  * @since 0.1.0
  */
-class Scene(name: String) {
-    var name = name
-        private set
+class Scene(val id: String) {
+    var name: String = id
     val backgroundColor = Vector4f()
     var clearBit = GLClearBit.NONE
     private val gameObjects = GameObjects()
+    private var customRender: (Scene.(Project) -> Unit)? = null
 
     class GameObjects {
         private val objects = LinkedHashMap<String, GameObjectImpl>()
@@ -36,21 +36,21 @@ class Scene(name: String) {
             add(this, block)
     }
 
-    fun rename(project: Project, name: String) {
-        project.scenes.remove(this.name)
-        project.scenes[name] = this
+    fun gameObjects(block: GameObjects.() -> Unit) = block(gameObjects)
+
+    fun customRenderer(block: (Scene.(Project) -> Unit)?) {
+        customRender = block
     }
 
-    fun gameObjects(block: GameObjects.() -> Unit) {
-        block(gameObjects)
-    }
+    fun clearNow() = glClear(clearBit.bits)
 
-    fun clearNow() {
-        glClear(clearBit.bits)
-    }
-
-    fun render(project: Project) {
+    fun renderDefault(project: Project) {
         project.glStateMgr.setClearColor(backgroundColor)
         clearNow()
+    }
+
+    fun render(project: Project) = customRender.let {
+        if (it != null) it(project)
+        else renderDefault(project)
     }
 }

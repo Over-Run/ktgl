@@ -39,3 +39,7 @@ abstract class GameObject<T : GameObject<T>> {
         fixedUpdate(getThis(), delta)
     }
 }
+
+class GameObjectImpl : GameObject<GameObjectImpl>() {
+    override fun getThis(): GameObjectImpl = this
+}

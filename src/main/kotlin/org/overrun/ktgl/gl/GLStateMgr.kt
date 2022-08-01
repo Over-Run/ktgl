@@ -1,8 +1,7 @@
 package org.overrun.ktgl.gl
 
 import org.joml.Vector4fc
-import org.lwjgl.opengl.GL20C.glClearColor
-import org.lwjgl.opengl.GL20C.glUseProgram
+import org.lwjgl.opengl.GL30C.*
 
 /**
  * @author squid233
@@ -18,6 +17,13 @@ class GLStateMgr {
             if (field != value) {
                 field = value
                 glUseProgram(value)
+            }
+        }
+    var vertexArray = 0
+        set(value) {
+            if (field != value) {
+                field = value
+                glBindVertexArray(value)
             }
         }
 

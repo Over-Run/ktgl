@@ -3,8 +3,10 @@ package org.overrun.ktgl
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL11C
 import org.lwjgl.system.APIUtil
 import org.overrun.ktgl.gl.GLStateMgr
+import org.overrun.ktgl.gl.shader.GLShader
 import org.overrun.ktgl.io.Window
 import org.overrun.ktgl.scene.Scene
 import org.slf4j.Logger
@@ -25,11 +27,14 @@ class Project(name: String) : Runnable, AutoCloseable {
             field = value
             logger = LoggerFactory.getLogger(name)
         }
-    internal val scenes = LinkedHashMap<String, Scene>()
+    internal val scenes = HashMap<String, Scene>()
     var logger: Logger = LoggerFactory.getLogger(name)
     val hints = GLFWHints()
     val window = Window(title = name)
     var currScene: String? = null
+
+    private val shaders = HashMap<String, GLShader>()
+
     private var errorCallback: ((Int, String) -> Unit)? = null
     private var preStart = { }
     private var start = { }
@@ -37,6 +42,7 @@ class Project(name: String) : Runnable, AutoCloseable {
     private var running = { }
     private var postRunning = { }
     private var close = { }
+
     lateinit var glStateMgr: GLStateMgr
         private set
 
@@ -44,43 +50,44 @@ class Project(name: String) : Runnable, AutoCloseable {
         block(this)
     }
 
-    fun createScene(name: String): Scene {
-        if (scenes.containsKey(name)) {
-            return this[name]
-        }
-        return Scene(name).also { scenes[name] = it }
+    fun createShader(id: String): GLShader {
+        return createShader(GLShader(id))
     }
 
-    inline fun createScene(name: String, block: Scene.() -> Unit): Scene = createScene(name).apply(block)
+    fun createShader(shader: GLShader): GLShader {
+        val id = shader.id
+        if (shaders.containsKey(id)) {
+            return shaders[id]!!
+        }
+        return shader.also { shaders[id] = it }
+    }
+
+    fun getShader(id: String): GLShader? = shaders[id]
+
+    fun removeShader(id: String) {
+        shaders[id]?.close()
+        shaders.remove(id)
+    }
+
+    fun createScene(id: String): Scene {
+        if (scenes.containsKey(id)) {
+            return this[id]
+        }
+        return Scene(id).also { scenes[id] = it }
+    }
+
+    inline fun createScene(id: String, block: Scene.() -> Unit): Scene = createScene(id).apply(block)
     inline operator fun String.invoke(block: Scene.() -> Unit): Scene = createScene(this, block)
 
-    fun Scene.render() {
-        render(this@Project)
-    }
+    fun Scene.render() = render(this@Project)
 
-    fun Scene.rename(name: String) {
-        rename(this@Project, name)
-    }
+    fun renderScene(id: String) = this[id].render()
 
-    fun renderScene(name: String) {
-        this[name].render()
-    }
-
-    fun renameScene(name: String, newName: String) {
-        this[name].rename(newName)
-    }
-
-    operator fun get(name: String): Scene = scenes[name]!!
-    inline operator fun get(name: String, block: Scene.() -> Unit): Scene {
-        val scene = this[name]
-        block(scene)
-        return scene
-    }
+    operator fun get(id: String): Scene = scenes[id]!!
+    inline operator fun get(id: String, block: Scene.() -> Unit): Scene = this[id].apply(block)
 
     fun hints(block: (GLFWHints) -> Unit) = block(hints)
-    fun hints(vararg hintPairs: Pair<Int, Int>) {
-        hintPairs.forEach { (hint, value) -> hints[hint] = value }
-    }
+    fun hints(vararg hintPairs: Pair<Int, Int>) = hintPairs.forEach { (hint, value) -> hints[hint] = value }
 
     inline fun window(block: Window.() -> Unit) = block(window)
 
@@ -161,6 +168,9 @@ class Project(name: String) : Runnable, AutoCloseable {
                 else -> null
             }?.invoke(key, scancode, mods)
         }
+        glfwSetFramebufferSizeCallback(window.handle) { _, width, height ->
+            GL11C.glViewport(0, 0, width, height)
+        }
 
         preStart()
         window.makeCtxCurr()
@@ -173,7 +183,7 @@ class Project(name: String) : Runnable, AutoCloseable {
         while (!window.shouldClose()) {
             running()
             currScene?.also { this[it].render() }
-            window.swapBuffer()
+            window.swapBuffers()
             window.pollEvents()
             postRunning()
         }
@@ -183,12 +193,11 @@ class Project(name: String) : Runnable, AutoCloseable {
 
     override fun close() {
         close.invoke()
+        shaders.values.forEach(GLShader::close)
         window.close()
         glfwTerminate()
         glfwSetErrorCallback(null)?.close()
     }
 
-    inline operator fun invoke(block: Project.() -> Unit) {
-        block(this)
-    }
+    inline operator fun invoke(block: Project.() -> Unit) = block(this)
 }

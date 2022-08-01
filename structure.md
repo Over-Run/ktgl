@@ -1,5 +1,24 @@
 # Structure
 
+## Startup Sequence
+
+```mermaid
+flowchart TB
+subgraph Start
+    direction TB
+    init[Initialize window] --> preStart --> initCtx[Create GL context] --> start -->
+    show[Show window] --> postStart
+end
+subgraph Running
+    direction TB
+    running --> render[Render scene] --> swap[Swap buffers] -->
+    poll[Poll events] --> postRunning
+end
+currProj([Set currentProject]) --> errorCb[Set error callback] --> Start -->
+shouldClose{Should close} -->|False| Running --> shouldClose
+shouldClose -->|True| close --> closeWindow[Close window] --> terminate([Terminate])
+```
+
 ## Engine Sequence
 
 ```mermaid
