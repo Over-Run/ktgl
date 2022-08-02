@@ -16,16 +16,20 @@ fun FloatBuffer.put(vararg src: Float): FloatBuffer {
 
 @OptIn(ExperimentalContracts::class)
 fun <T : Buffer?, R> T.use(block: (T) -> R): R {
-    contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    try {
+        return block(this)
+    } finally {
+        MemoryUtil.memFree(this)
     }
-    AutoCloseable { MemoryUtil.memFree(this) }.use { return block(this) }
 }
 
 @OptIn(ExperimentalContracts::class)
 fun <T : CustomBuffer<*>?, R> T.use(block: (T) -> R): R {
-    contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    try {
+        return block(this)
+    } finally {
+        MemoryUtil.memFree(this)
     }
-    AutoCloseable { MemoryUtil.memFree(this) }.use { return block(this) }
 }

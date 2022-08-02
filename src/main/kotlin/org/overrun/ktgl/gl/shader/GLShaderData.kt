@@ -8,8 +8,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 internal data class GLShaderAttrib(
-    val name: String,
-    val size: Int
+    val name: String
 )
 
 /**
@@ -31,6 +30,10 @@ internal abstract class GLShaderUniform<T> {
     abstract val value: T?
 }
 
+/**
+ * @author squid233
+ * @since 0.1.0
+ */
 @Serializable
 internal data class GLShaderUniformMat4(
     override val name: String,
@@ -63,6 +66,10 @@ internal data class GLShaderUniformMat4(
     }
 }
 
+/**
+ * @author squid233
+ * @since 0.1.0
+ */
 @Serializable
 internal data class GLShaderUniformVec4(
     override val name: String,

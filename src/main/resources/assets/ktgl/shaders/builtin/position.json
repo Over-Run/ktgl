@@ -4,7 +4,7 @@
   "fragment": "ktgl:shaders/builtin/position",
   "input": {
     "position": {
-      "name": "position", "size": 3
+      "name": "position"
     }
   },
   "uniforms": {

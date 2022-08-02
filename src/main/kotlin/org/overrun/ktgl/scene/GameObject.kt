@@ -2,6 +2,9 @@ package org.overrun.ktgl.scene
 
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.overrun.ktgl.gl.GLDrawMode
+import org.overrun.ktgl.gl.shader.GLShader
+import org.overrun.ktgl.model.IModel
 
 /**
  * ## Game Object
@@ -11,6 +14,10 @@ import org.joml.Vector3f
  */
 abstract class GameObject<T : GameObject<T>> {
     var behavior: Behavior<T>? = null
+    var visible = true
+    var model: Lazy<IModel?> = lazyOf(null)
+    var shader: () -> GLShader? = { null }
+    var drawType = GLDrawMode.TRIANGLES
 
     /**
      * The rotation relative center
@@ -27,8 +34,17 @@ abstract class GameObject<T : GameObject<T>> {
 
     fun behavior(block: Behavior<T>.() -> Unit) {
         val behavior = Behavior<T>()
-        block(behavior)
+        behavior.block()
         this.behavior = behavior
+    }
+
+    fun model(block: () -> IModel?) {
+        // TODO: Thread safe
+        model = lazy(LazyThreadSafetyMode.NONE, block)
+    }
+
+    fun shader(block: () -> GLShader?) {
+        shader = block
     }
 
     fun Behavior<T>.update(delta: Double) {

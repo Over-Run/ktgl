@@ -13,6 +13,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 var currentProject: Project? = null
+var currentGLStateMgr: GLStateMgr? = null
 
 /**
  * A ktgl project.
@@ -33,12 +34,16 @@ class Project(name: String) : Runnable, AutoCloseable {
     val window = Window(title = name)
     var currScene: String? = null
 
+    private var lastTime: Double = 0.0
+    private var delta: Double = 0.0
+
     private val shaders = HashMap<String, GLShader>()
 
     private var errorCallback: ((Int, String) -> Unit)? = null
     private var preStart = { }
     private var start = { }
     private var postStart = { }
+    private var preRunning = { }
     private var running = { }
     private var postRunning = { }
     private var close = { }
@@ -47,12 +52,11 @@ class Project(name: String) : Runnable, AutoCloseable {
         private set
 
     constructor(name: String, block: Project.() -> Unit) : this(name) {
-        block(this)
+        block()
     }
 
-    fun createShader(id: String): GLShader {
-        return createShader(GLShader(id))
-    }
+    fun createBuiltinShader(shader: Lazy<GLShader>) = createShader(shader.value)
+    fun createShader(id: String): GLShader = createShader(GLShader(id))
 
     fun createShader(shader: GLShader): GLShader {
         val id = shader.id
@@ -105,6 +109,10 @@ class Project(name: String) : Runnable, AutoCloseable {
 
     fun afterStart(block: () -> Unit) {
         postStart = block
+    }
+
+    fun preRunning(block: () -> Unit) {
+        preRunning = block
     }
 
     fun onRunning(block: () -> Unit) {
@@ -176,13 +184,24 @@ class Project(name: String) : Runnable, AutoCloseable {
         window.makeCtxCurr()
         GL.createCapabilities(true)
         glStateMgr = GLStateMgr()
+        currentGLStateMgr = glStateMgr
         start()
         window.show()
         postStart()
 
+        lastTime = glfwGetTime()
+
         while (!window.shouldClose()) {
+            delta = glfwGetTime() - lastTime
+            lastTime = glfwGetTime()
+            preRunning()
+            currScene?.also {
+                this[it].apply {
+                    update(delta)
+                    render()
+                }
+            }
             running()
-            currScene?.also { this[it].render() }
             window.swapBuffers()
             window.pollEvents()
             postRunning()
@@ -199,5 +218,5 @@ class Project(name: String) : Runnable, AutoCloseable {
         glfwSetErrorCallback(null)?.close()
     }
 
-    inline operator fun invoke(block: Project.() -> Unit) = block(this)
+    inline operator fun invoke(block: Project.() -> Unit) = block()
 }

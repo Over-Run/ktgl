@@ -20,7 +20,7 @@ class Scene(val id: String) {
     private var customRender: (Scene.(Project) -> Unit)? = null
 
     class GameObjects {
-        private val objects = LinkedHashMap<String, GameObjectImpl>()
+        internal val objects = LinkedHashMap<String, GameObjectImpl>()
 
         fun add(name: String): GameObjectImpl {
             if (objects.containsKey(name)) {
@@ -44,9 +44,33 @@ class Scene(val id: String) {
 
     fun clearNow() = glClear(clearBit.bits)
 
+    fun update(delta: Double) {
+        gameObjects.objects.values.forEach { it.behavior?.update(it, delta) }
+    }
+
+    fun fixedUpdate(delta: Double) {
+        gameObjects.objects.values.forEach { it.behavior?.fixedUpdate(it, delta) }
+    }
+
     fun renderDefault(project: Project) {
         project.glStateMgr.setClearColor(backgroundColor)
         clearNow()
+
+        project.glStateMgr.useProgram {
+            gameObjects.objects.values.forEach {
+                if (it.visible) {
+                    val model = it.model.value
+                    if (model != null) {
+                        val shader = it.shader()
+                        if (shader != null) {
+                            shader.bind()
+                            shader.uploadUniforms()
+                            model.render(it.drawType)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun render(project: Project) = customRender.let {

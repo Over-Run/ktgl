@@ -10,4 +10,4 @@ interface IBehavior<T : GameObject<T>> {
     fun onFixedUpdate(block: UpdateCallback<T>)
 }
 
-typealias UpdateCallback <T> = (T.(delta: Double) -> Unit)?
+typealias UpdateCallback<T> = (T.(delta: Double) -> Unit)?

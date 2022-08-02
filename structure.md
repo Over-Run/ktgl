@@ -11,8 +11,8 @@ subgraph Start
 end
 subgraph Running
     direction TB
-    running --> render[Render scene] --> swap[Swap buffers] -->
-    poll[Poll events] --> postRunning
+    Timing --> preRunning --> update[Update Scene] --> render[Render scene] -->
+    running --> swap[Swap buffers] --> poll[Poll events] --> postRunning
 end
 currProj([Set currentProject]) --> errorCb[Set error callback] --> Start -->
 shouldClose{Should close} -->|False| Running --> shouldClose

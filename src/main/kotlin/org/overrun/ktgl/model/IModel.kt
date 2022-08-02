@@ -7,7 +7,5 @@ import org.overrun.ktgl.gl.GLDrawMode
  * @since 0.1.0
  */
 interface IModel {
-    val meshes: List<IMesh>
-
     fun render(mode: GLDrawMode)
 }

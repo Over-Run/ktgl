@@ -1,19 +1,14 @@
 package org.overrun.ktgl.test
 
 import org.lwjgl.glfw.GLFW.*
-import org.lwjgl.opengl.GL30C.*
-import org.lwjgl.system.MemoryUtil
 import org.overrun.ktgl.Project
 import org.overrun.ktgl.gl.GLClearBit
-import org.overrun.ktgl.gl.shader.ATTRIB_POSITION_LOC
 import org.overrun.ktgl.gl.shader.BuiltinShaders
-import org.overrun.ktgl.gl.shader.useShader
-import org.overrun.ktgl.io.put
-import org.overrun.ktgl.io.use
+import org.overrun.ktgl.model.Mesh
+import org.overrun.ktgl.model.Model
+import org.overrun.ktgl.model.Vertex
 
 fun main() {
-    var vao = 0
-    var vbo: Int
     Project("CubeProject") {
         "my_scene" {
             name = "My Scene"
@@ -26,16 +21,18 @@ fun main() {
                         onFixedUpdate { delta ->
                         }
                     }
-                }
-            }
-
-            customRenderer {
-                renderDefault(it)
-                useShader(BuiltinShaders.position.value) {
-                    uploadUniforms()
-                    glStateMgr.vertexArray = vao
-                    glDrawArrays(GL_TRIANGLES, 0, 3)
-                    glStateMgr.vertexArray = 0
+                    shader { createBuiltinShader(BuiltinShaders.position) }
+                    model {
+                        Model().loadMeshes(
+                            Mesh(
+                                arrayOf(
+                                    Vertex(0.0F, 0.5F),
+                                    Vertex(-0.5F, -0.5F),
+                                    Vertex(0.5F, -0.5F)
+                                )
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -56,23 +53,8 @@ fun main() {
         }
         onStart {
             window swapInterval 1
-            createShader(BuiltinShaders.position.value)
-            vao = glGenVertexArrays()
-            glStateMgr.vertexArray = vao
-            vbo = glGenBuffers()
-            glBindBuffer(GL_ARRAY_BUFFER, vbo)
-            MemoryUtil.memAllocFloat(9).put(
-                0.0F, 0.5F, 0.0F,
-                -0.5F, -0.5F, 0.0F,
-                0.5F, -0.5F, 0.0F
-            ).flip().use {
-                glBufferData(GL_ARRAY_BUFFER, it, GL_STATIC_DRAW)
-            }
-            glEnableVertexAttribArray(ATTRIB_POSITION_LOC)
-            glVertexAttribPointer(ATTRIB_POSITION_LOC, 3, GL_FLOAT, false, 0, 0L)
-            glStateMgr.vertexArray = 0
         }
-        onRunning {
+        preRunning {
             currScene = "my_scene"
         }
     }.runFinally()

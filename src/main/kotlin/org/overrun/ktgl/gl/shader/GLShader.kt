@@ -5,34 +5,33 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import org.lwjgl.opengl.GL20C.*
-import org.overrun.ktgl.currentProject
+import org.overrun.ktgl.currentGLStateMgr
 import org.overrun.ktgl.io.IFileProvider
 import org.overrun.ktgl.util.Identifier
 import org.overrun.ktgl.util.ResourceType
 import org.overrun.ktgl.util.toFile
 
 const val ATTRIB_POSITION_LOC = 0
+const val ATTRIB_COLOR_LOC = 1
+const val ATTRIB_TEX_COORD_LOC = 2
+const val ATTRIB_NORMAL_LOC = 5
 
 fun bindShader(shader: GLShader): Boolean {
-    currentProject?.apply {
-        glStateMgr.program = shader.programId
+    val stateMgr = currentGLStateMgr
+    if (stateMgr != null) {
+        stateMgr.program = shader.programId
         return true
     }
     return false
 }
 
 fun unbindShader() {
-    currentProject?.apply {
-        glStateMgr.program = 0
-    }
+    currentGLStateMgr?.program = 0
 }
 
 fun useShader(shader: GLShader, block: GLShader.() -> Unit) {
-    currentProject?.run {
-        val program = glStateMgr.program
-        glStateMgr.program = shader.programId
-        block(shader)
-        glStateMgr.program = program
+    currentGLStateMgr?.useProgram(shader.programId) {
+        shader.block()
     }
 }
 
@@ -41,13 +40,7 @@ object BuiltinShaders {
 
     @JvmField
     val position = lazy {
-        GLShader(POSITION_ID).apply {
-            loadById(
-                ResourceType.ASSETS,
-                "ktgl:shaders/builtin/position.json",
-                IFileProvider.SYSTEM
-            )
-        }
+        GLShader(POSITION_ID).loadBuiltin("ktgl:shaders/builtin/position.json")
     }
 }
 
@@ -61,6 +54,25 @@ class GLShader(val id: String) : AutoCloseable {
     private var data: GLShaderData? = null
     private val uniformMap = HashMap<CharSequence, GLUniform>()
     private var closed = false
+
+    fun bind(): Boolean {
+        val stateMgr = currentGLStateMgr
+        if (stateMgr != null) {
+            stateMgr.program = programId
+            return true
+        }
+        return false
+    }
+
+    fun unbind() {
+        currentGLStateMgr?.program = 0
+    }
+
+    fun use(block: GLShader.() -> Unit) {
+        currentGLStateMgr?.useProgram(programId) {
+            block()
+        }
+    }
 
     private fun getUniform(block: GLShaderUniforms.() -> GLShaderUniform<*>?): GLUniform? =
         uniformMap[data?.uniforms?.block()?.name!!]
@@ -83,7 +95,7 @@ class GLShader(val id: String) : AutoCloseable {
         block: GLUniform.(T) -> Unit
     ) = createUniform(name, type).let {
         if (it != null) {
-            if (value != null) block(it, value!!)
+            if (value != null) it.block(value!!)
         } else {
             throw IllegalStateException("Uniform $type $name not found!")
         }
@@ -112,7 +124,7 @@ class GLShader(val id: String) : AutoCloseable {
         type: ResourceType,
         data: GLShaderData,
         provider: IFileProvider
-    ) {
+    ): GLShader {
         this.data = data
         name = data.name ?: "Unknown Shader"
         val vsh = loadShader(
@@ -146,6 +158,8 @@ class GLShader(val id: String) : AutoCloseable {
             model?.create(GLUniformType.MAT4)
             colorModulator?.create(GLUniformType.VEC4)
         }
+
+        return this
     }
 
     fun load(
@@ -173,11 +187,15 @@ class GLShader(val id: String) : AutoCloseable {
         provider: IFileProvider
     ) = loadFromFile(type, identifier toFile type, provider)
 
+    fun loadBuiltin(
+        identifier: String
+    ) = loadById(ResourceType.ASSETS, identifier, IFileProvider.SYSTEM)
+
     override fun close() {
         if (closed)
             return
         closed = true
         uniformMap.values.forEach(GLUniform::close)
-        glDeleteProgram(programId)
+        currentGLStateMgr?.deleteProgram(programId)
     }
 }

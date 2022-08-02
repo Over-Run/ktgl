@@ -6,7 +6,7 @@ import org.lwjgl.opengl.GL40C.*
  * @author squid233
  * @since 0.1.0
  */
-enum class GLDrawMode(glConst: Int) {
+enum class GLDrawMode(val glConst: Int) {
     POINTS(GL_POINTS),
     LINES(GL_LINES),
     LINE_LOOP(GL_LINE_LOOP),

@@ -23,7 +23,7 @@ fun interface IFileProvider {
         } ?: Result.failure(IllegalStateException("getUrl(name) is null! name: $name"))
     }
 
-    private fun Reader.buildLines(): String = StringBuilder().also { forEachLine(it::appendLine) }.toString()
+    private fun Reader.buildLines(): String = buildString { this@buildLines.forEachLine(::appendLine) }
 
     fun useLines(name: String): String = toStream(name).getOrThrow().bufferedReader().buildLines()
 
@@ -35,7 +35,7 @@ fun interface IFileProvider {
         val LOCAL = IFileProvider { name -> File(name).toURI().toURL() }
 
         @JvmField
-        val SYSTEM = IFileProvider(ClassLoader::getSystemResource);
+        val SYSTEM = IFileProvider(ClassLoader::getSystemResource)
 
         @JvmStatic
         fun ofCaller(): IFileProvider =
