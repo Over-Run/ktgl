@@ -30,6 +30,11 @@ class Mesh() : IMesh {
         return this
     }
 
+    fun faceNoTess(vararg vertices: Vertex): Mesh {
+        vertices.forEach(::addVertex)
+        return this
+    }
+
     private fun addVertex(vertex: Vertex) {
         vertexList.add(vertex)
         if (meshType != MeshType.POSITION_TEX_NORMAL &&
@@ -37,6 +42,8 @@ class Mesh() : IMesh {
             vertex.normal != null
         ) {
             meshType = MeshType.POSITION_TEX_NORMAL
+        } else if (meshType == MeshType.POSITION_TEX_NORMAL) {
+            return
         } else {
             val type = MeshType.of(vertex)
             if (type > meshType)

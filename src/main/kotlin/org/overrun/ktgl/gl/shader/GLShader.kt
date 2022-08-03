@@ -58,6 +58,10 @@ class GLShader(val id: String) : AutoCloseable {
     fun bind(): Boolean {
         val stateMgr = currentGLStateMgr
         if (stateMgr != null) {
+            val pId = stateMgr.program
+            if (pId == programId) {
+                return false
+            }
             stateMgr.program = programId
             return true
         }
@@ -74,13 +78,19 @@ class GLShader(val id: String) : AutoCloseable {
         }
     }
 
-    private fun getUniform(block: GLShaderUniforms.() -> GLShaderUniform<*>?): GLUniform? =
-        uniformMap[data?.uniforms?.block()?.name!!]
+    private fun getUniform(block: GLShaderUniforms.() -> GLShaderUniform<*>?): GLUniform? {
+        val d = data ?: return null
+        val uniforms = d.uniforms ?: return null
+        val uniform = uniforms.block() ?: return null
+        return uniformMap[uniform.name]
+    }
 
     fun getProjection(): GLUniform? = getUniform { projection }
-    fun getView(): GLUniform? = getUniform { view }
-    fun getModel(): GLUniform? = getUniform { model }
+    fun getModelview(): GLUniform? = getUniform { modelview }
+    fun getNormal(): GLUniform? = getUniform { normal }
     fun getColorModulator(): GLUniform? = getUniform { colorModulator }
+    fun getDeltaTime(): GLUniform? = getUniform { deltaTime }
+    fun getCurrTime(): GLUniform? = getUniform { currTime }
 
     fun uploadUniforms() = uniformMap.values.forEach(GLUniform::upload)
 
@@ -101,7 +111,10 @@ class GLShader(val id: String) : AutoCloseable {
         }
     }
 
-    private fun GLShaderUniform<FloatArray>.create(type: GLUniformType) =
+    private fun GLShaderUniformFloat.create(type: GLUniformType) =
+        create(type, GLUniform::set)
+
+    private fun GLShaderUniformFArr.create(type: GLUniformType) =
         create(type, GLUniform::set)
 
     private fun loadShader(
@@ -154,9 +167,11 @@ class GLShader(val id: String) : AutoCloseable {
 
         data.uniforms?.apply {
             projection?.create(GLUniformType.MAT4)
-            view?.create(GLUniformType.MAT4)
-            model?.create(GLUniformType.MAT4)
+            modelview?.create(GLUniformType.MAT4)
+            normal?.create(GLUniformType.MAT3)
             colorModulator?.create(GLUniformType.VEC4)
+            deltaTime?.create(GLUniformType.FLOAT)
+            currTime?.create(GLUniformType.FLOAT)
         }
 
         return this

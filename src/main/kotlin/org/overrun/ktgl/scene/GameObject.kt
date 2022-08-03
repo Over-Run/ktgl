@@ -2,6 +2,7 @@ package org.overrun.ktgl.scene
 
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import org.joml.Vector4f
 import org.overrun.ktgl.gl.GLDrawMode
 import org.overrun.ktgl.gl.shader.GLShader
 import org.overrun.ktgl.model.IModel
@@ -23,12 +24,11 @@ abstract class GameObject<T : GameObject<T>> {
      * The rotation relative center
      */
     val anchor = Vector3f()
-
     val position = Vector3f()
-
     val rotation = Quaternionf()
+    val scale = Vector3f(1F)
 
-    val scale = Vector3f()
+    val color = Vector4f(1F)
 
     abstract fun getThis(): T
 
@@ -47,12 +47,16 @@ abstract class GameObject<T : GameObject<T>> {
         shader = block
     }
 
+    fun Behavior<T>.fixedUpdate(delta: Double) {
+        fixedUpdate(getThis(), delta)
+    }
+
     fun Behavior<T>.update(delta: Double) {
         update(getThis(), delta)
     }
 
-    fun Behavior<T>.fixedUpdate(delta: Double) {
-        fixedUpdate(getThis(), delta)
+    fun Behavior<T>.lateUpdate(delta: Double) {
+        lateUpdate(getThis(), delta)
     }
 }
 

@@ -11,11 +11,8 @@
     "projection": {
       "name": "ProjMat"
     },
-    "view": {
-      "name": "ViewMat"
-    },
-    "model": {
-      "name": "ModelMat"
+    "modelview": {
+      "name": "ModelViewMat"
     },
     "colorModulator": {
       "name": "ColorModulator", "value": [1.0, 1.0, 1.0, 1.0]

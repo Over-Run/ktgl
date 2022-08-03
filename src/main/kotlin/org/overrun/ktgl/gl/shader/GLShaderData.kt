@@ -35,6 +35,58 @@ internal abstract class GLShaderUniform<T> {
  * @since 0.1.0
  */
 @Serializable
+internal data class GLShaderUniformFloat(
+    override val name: String,
+    override val value: Float? = 0F
+) : GLShaderUniform<Float>()
+
+/**
+ * @author squid233
+ * @since 0.1.0
+ */
+@Serializable
+internal abstract class GLShaderUniformFArr : GLShaderUniform<FloatArray>()
+
+/**
+ * @author squid233
+ * @since 0.1.0
+ */
+@Serializable
+internal data class GLShaderUniformMat3(
+    override val name: String,
+    override val value: FloatArray? = floatArrayOf(
+        1F, 0F, 0F,
+        0F, 1F, 0F,
+        0F, 0F, 1F
+    )
+) : GLShaderUniformFArr() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as GLShaderUniformMat3
+
+        if (name != other.name) return false
+        if (value != null) {
+            if (other.value == null) return false
+            if (!value.contentEquals(other.value)) return false
+        } else if (other.value != null) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + (value?.contentHashCode() ?: 0)
+        return result
+    }
+}
+
+/**
+ * @author squid233
+ * @since 0.1.0
+ */
+@Serializable
 internal data class GLShaderUniformMat4(
     override val name: String,
     override val value: FloatArray? = floatArrayOf(
@@ -43,7 +95,7 @@ internal data class GLShaderUniformMat4(
         0F, 0F, 1F, 0F,
         0F, 0F, 0F, 1F
     )
-) : GLShaderUniform<FloatArray>() {
+) : GLShaderUniformFArr() {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -74,7 +126,7 @@ internal data class GLShaderUniformMat4(
 internal data class GLShaderUniformVec4(
     override val name: String,
     override val value: FloatArray? = floatArrayOf(0F, 0F, 0F, 0F)
-) : GLShaderUniform<FloatArray>() {
+) : GLShaderUniformFArr() {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -104,9 +156,11 @@ internal data class GLShaderUniformVec4(
 @Serializable
 internal data class GLShaderUniforms(
     val projection: GLShaderUniformMat4? = null,
-    val view: GLShaderUniformMat4? = null,
-    val model: GLShaderUniformMat4? = null,
-    val colorModulator: GLShaderUniformVec4? = null
+    val modelview: GLShaderUniformMat4? = null,
+    val normal: GLShaderUniformMat3? = null,
+    val colorModulator: GLShaderUniformVec4? = null,
+    val deltaTime: GLShaderUniformFloat? = null,
+    val currTime: GLShaderUniformFloat? = null
 )
 
 /**

@@ -62,10 +62,10 @@ class GLStateMgr {
     }
 
     fun setClearColor(r: Float, g: Float, b: Float, a: Float) {
-        if (clearR.compareTo(r) != 0 ||
-            clearG.compareTo(g) != 0 ||
-            clearB.compareTo(b) != 0 ||
-            clearA.compareTo(a) != 0
+        if (clearR != r ||
+            clearG != g ||
+            clearB != b ||
+            clearA != a
         ) {
             clearR = r
             clearG = g

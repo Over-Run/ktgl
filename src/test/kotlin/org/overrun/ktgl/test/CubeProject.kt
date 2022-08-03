@@ -4,9 +4,10 @@ import org.lwjgl.glfw.GLFW.*
 import org.overrun.ktgl.Project
 import org.overrun.ktgl.gl.GLClearBit
 import org.overrun.ktgl.gl.shader.BuiltinShaders
-import org.overrun.ktgl.model.Mesh
 import org.overrun.ktgl.model.Model
 import org.overrun.ktgl.model.Vertex
+import org.overrun.ktgl.util.hslToRgb
+import org.overrun.ktgl.util.time.Time
 
 fun main() {
     Project("CubeProject") {
@@ -18,20 +19,29 @@ fun main() {
             gameObjects {
                 "Cube" {
                     behavior {
-                        onFixedUpdate { delta ->
+                        onFixedUpdate {
+                            hslToRgb(
+                                Time.time.toFloat() / Time.fixedTimestep.toFloat() * 0.5F % 360F,
+                                0.7F,
+                                0.5F
+                            ).also { (r, g, b) ->
+                                color.set(r, g, b, 1F)
+                            }
+                        }
+                        onUpdate { delta ->
+                            rotation.rotateZ(delta.toFloat())
                         }
                     }
                     shader { createBuiltinShader(BuiltinShaders.position) }
                     model {
-                        Model().loadMeshes(
-                            Mesh(
-                                arrayOf(
-                                    Vertex(0.0F, 0.5F),
-                                    Vertex(-0.5F, -0.5F),
-                                    Vertex(0.5F, -0.5F)
-                                )
+                        Model {
+                            face(
+                                Vertex(-0.5F, 0.5F),
+                                Vertex(-0.5F, -0.5F),
+                                Vertex(0.5F, -0.5F),
+                                Vertex(0.5F, 0.5F)
                             )
-                        )
+                        }
                     }
                 }
             }

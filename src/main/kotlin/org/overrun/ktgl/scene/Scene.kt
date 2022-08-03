@@ -4,6 +4,11 @@ import org.joml.Vector4f
 import org.lwjgl.opengl.GL11C.glClear
 import org.overrun.ktgl.Project
 import org.overrun.ktgl.gl.GLClearBit
+import org.overrun.ktgl.util.math.ktglModelMat
+import org.overrun.ktgl.util.math.ktglModelviewMat
+import org.overrun.ktgl.util.math.ktglNormalMat
+import org.overrun.ktgl.util.math.ktglProjMat
+import org.overrun.ktgl.util.time.Time
 
 /**
  * A ktgl scene.
@@ -44,12 +49,16 @@ class Scene(val id: String) {
 
     fun clearNow() = glClear(clearBit.bits)
 
+    fun fixedUpdate(delta: Double) {
+        gameObjects.objects.values.forEach { it.behavior?.fixedUpdate(it, delta) }
+    }
+
     fun update(delta: Double) {
         gameObjects.objects.values.forEach { it.behavior?.update(it, delta) }
     }
 
-    fun fixedUpdate(delta: Double) {
-        gameObjects.objects.values.forEach { it.behavior?.fixedUpdate(it, delta) }
+    fun lateUpdate(delta: Double) {
+        gameObjects.objects.values.forEach { it.behavior?.lateUpdate(it, delta) }
     }
 
     fun renderDefault(project: Project) {
@@ -63,7 +72,22 @@ class Scene(val id: String) {
                     if (model != null) {
                         val shader = it.shader()
                         if (shader != null) {
-                            shader.bind()
+                            val changed = shader.bind()
+                            if (changed) {
+                                shader.getDeltaTime()?.set(Time.deltaTime.toFloat())
+                                shader.getCurrTime()?.set(Time.time.toFloat())
+                            }
+                            shader.getProjection()?.set(ktglProjMat)
+                            ktglModelMat.apply {
+                                translation(it.position)
+                                    .translate(it.anchor)
+                                    .rotate(it.rotation)
+                                    .translate(-it.anchor.x, -it.anchor.y, -it.anchor.z)
+                                    .scale(it.scale)
+                                shader.getModelview()?.set(ktglModelviewMat)
+                                shader.getNormal()?.set(ktglNormalMat)
+                            }
+                            shader.getColorModulator()?.set(it.color)
                             shader.uploadUniforms()
                             model.render(it.drawType)
                         }

@@ -9,6 +9,8 @@ import org.overrun.ktgl.gl.GLStateMgr
 import org.overrun.ktgl.gl.shader.GLShader
 import org.overrun.ktgl.io.Window
 import org.overrun.ktgl.scene.Scene
+import org.overrun.ktgl.util.time.Time
+import org.overrun.ktgl.util.time.Timer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -34,8 +36,7 @@ class Project(name: String) : Runnable, AutoCloseable {
     val window = Window(title = name)
     var currScene: String? = null
 
-    private var lastTime: Double = 0.0
-    private var delta: Double = 0.0
+    private val timer = Timer()
 
     private val shaders = HashMap<String, GLShader>()
 
@@ -189,15 +190,18 @@ class Project(name: String) : Runnable, AutoCloseable {
         window.show()
         postStart()
 
-        lastTime = glfwGetTime()
+        timer.advanceTime()
 
         while (!window.shouldClose()) {
-            delta = glfwGetTime() - lastTime
-            lastTime = glfwGetTime()
+            timer.advanceTime()
             preRunning()
             currScene?.also {
                 this[it].apply {
-                    update(delta)
+                    for (i in 0 until timer.ticks) {
+                        fixedUpdate(Time.fixedTimestep)
+                    }
+                    update(Time.deltaTime)
+                    lateUpdate(Time.deltaTime)
                     render()
                 }
             }

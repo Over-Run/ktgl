@@ -2,8 +2,8 @@
 
 in vec3 position;
 
-uniform mat4 ProjMat, ViewMat, ModelMat;
+uniform mat4 ProjMat, ModelViewMat;
 
 void main() {
-    gl_Position = ProjMat * ViewMat * ModelMat * vec4(position, 1.0);
+    gl_Position = ProjMat * ModelViewMat * vec4(position, 1.0);
 }

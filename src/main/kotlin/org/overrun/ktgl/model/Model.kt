@@ -18,6 +18,10 @@ import java.nio.IntBuffer
 class Model(val immutable: Boolean = true) : IModel, AutoCloseable {
     private val typeModelMap = HashMap<MeshType, TypeModel>()
 
+    constructor(immutable: Boolean = true, block: Mesh.() -> Unit) : this(immutable) {
+        loadMesh(block)
+    }
+
     /**
      * @param[type] the mesh type
      * @author squid233
@@ -244,6 +248,8 @@ class Model(val immutable: Boolean = true) : IModel, AutoCloseable {
         processMeshes({ isNotEmpty() || typeModelMap.containsKey(it) }, meshes, TypeModel::loadMeshes)
         return this
     }
+
+    fun loadMesh(block: Mesh.() -> Unit): Model = loadMeshes(Mesh(block))
 
     override fun render(mode: GLDrawMode) {
         typeModelMap.values.forEach { it.render(mode) }

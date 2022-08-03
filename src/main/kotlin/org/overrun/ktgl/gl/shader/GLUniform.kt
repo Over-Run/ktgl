@@ -1,14 +1,16 @@
 package org.overrun.ktgl.gl.shader
 
+import org.joml.Matrix3fc
 import org.joml.Matrix4fc
 import org.joml.Vector4fc
-import org.lwjgl.opengl.GL20C.glUniform4f
-import org.lwjgl.opengl.GL20C.nglUniformMatrix4fv
+import org.lwjgl.opengl.GL20C.*
 import org.lwjgl.system.MemoryUtil.*
 import java.nio.ByteBuffer
 
 enum class GLUniformType(val size: Int, val length: Int, val glName: String) {
+    FLOAT(1, 4, "float"),
     VEC4(4, 16, "vec4"),
+    MAT3(9, 36, "mat3"),
     MAT4(16, 64, "mat4");
 
     override fun toString(): String {
@@ -34,10 +36,16 @@ class GLUniform(val location: Int, val type: GLUniformType) : AutoCloseable {
         buffer.position(0)
     }
 
+    fun set(x: Float) = set { it.putFloat(x) }
+    fun set(x: Float, y: Float) = set { it.putFloat(x).putFloat(y) }
+    fun set(x: Float, y: Float, z: Float) = set { it.putFloat(x).putFloat(y).putFloat(z) }
+    fun set(x: Float, y: Float, z: Float, w: Float) = set { it.putFloat(x).putFloat(y).putFloat(z).putFloat(w) }
+
     fun set(array: FloatArray) = set { array.forEach(it::putFloat) }
 
     fun set(vec4: Vector4fc) = set(vec4::get)
 
+    fun set(mat3: Matrix3fc) = set(mat3::get)
     fun set(mat4: Matrix4fc) = set(mat4::get)
 
     fun upload() {
@@ -45,6 +53,7 @@ class GLUniform(val location: Int, val type: GLUniformType) : AutoCloseable {
             return
         dirty = false
         when (type) {
+            GLUniformType.FLOAT -> glUniform1f(location, buffer.getFloat(0))
             GLUniformType.VEC4 -> glUniform4f(
                 location,
                 buffer.getFloat(0),
@@ -53,6 +62,7 @@ class GLUniform(val location: Int, val type: GLUniformType) : AutoCloseable {
                 buffer.getFloat(12)
             )
 
+            GLUniformType.MAT3 -> nglUniformMatrix3fv(location, 1, false, memAddress(buffer))
             GLUniformType.MAT4 -> nglUniformMatrix4fv(location, 1, false, memAddress(buffer))
         }
     }
