@@ -8,10 +8,10 @@ import org.lwjgl.opengl.GL30C.*
  * @since 0.1.0
  */
 class GLStateMgr {
-    private var clearR = 0F
-    private var clearG = 0F
-    private var clearB = 0F
-    private var clearA = 0F
+    private var clearR = 0f
+    private var clearG = 0f
+    private var clearB = 0f
+    private var clearA = 0f
     var program = 0
         set(value) {
             if (field != value) {

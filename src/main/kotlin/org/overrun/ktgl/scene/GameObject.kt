@@ -13,8 +13,9 @@ import org.overrun.ktgl.model.IModel
  * @author squid233
  * @since 0.1.0
  */
-abstract class GameObject<T : GameObject<T>> {
-    var behavior: Behavior<T>? = null
+open class GameObject(val id: String) {
+    var name = id
+    var behavior: Behavior? = null
     var visible = true
     var model: Lazy<IModel?> = lazyOf(null)
     var shader: () -> GLShader? = { null }
@@ -26,15 +27,13 @@ abstract class GameObject<T : GameObject<T>> {
     val anchor = Vector3f()
     val position = Vector3f()
     val rotation = Quaternionf()
-    val scale = Vector3f(1F)
+    val scale = Vector3f(1f)
 
-    val color = Vector4f(1F)
+    val color = Vector4f(1f)
 
-    abstract fun getThis(): T
-
-    fun behavior(block: Behavior<T>.() -> Unit) {
-        val behavior = Behavior<T>()
-        behavior.block()
+    fun behavior(block: Behavior.() -> Unit) {
+        val behavior = Behavior()
+        block(behavior)
         this.behavior = behavior
     }
 
@@ -46,20 +45,4 @@ abstract class GameObject<T : GameObject<T>> {
     fun shader(block: () -> GLShader?) {
         shader = block
     }
-
-    fun Behavior<T>.fixedUpdate(delta: Double) {
-        fixedUpdate(getThis(), delta)
-    }
-
-    fun Behavior<T>.update(delta: Double) {
-        update(getThis(), delta)
-    }
-
-    fun Behavior<T>.lateUpdate(delta: Double) {
-        lateUpdate(getThis(), delta)
-    }
-}
-
-class GameObjectImpl : GameObject<GameObjectImpl>() {
-    override fun getThis(): GameObjectImpl = this
 }

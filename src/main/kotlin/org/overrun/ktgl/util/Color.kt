@@ -16,14 +16,14 @@ import kotlin.math.abs
 fun rgbToHsl(r: Float, g: Float, b: Float): FloatArray {
     val v = maxOf(r, g, b)
     val c = v - minOf(r, g, b)
-    val f = 1F - abs(v + v - c - 1F)
-    val h = if (c == 0F || c.isNaN()) c
+    val f = 1f - abs(v + v - c - 1f)
+    val h = if (c == 0f || c.isNaN()) c
     else if (v == r) (g - b) / c
-    else if (v == g) 2F + (b - r) / c
-    else 4F + (r - g) / c
-    return floatArrayOf(60F * (if (h < 0F) h + 6F else h),
-        if (f == 0F || f.isNaN()) c / f else 0F,
-        (v + v - c) / 2F)
+    else if (v == g) 2f + (b - r) / c
+    else 4f + (r - g) / c
+    return floatArrayOf(60f * (if (h < 0f) h + 6f else h),
+        if (f == 0f || f.isNaN()) c / f else 0f,
+        (v + v - c) / 2f)
 }
 
 /**
@@ -38,7 +38,7 @@ fun rgbToHsl(r: Float, g: Float, b: Float): FloatArray {
  * @return The RGB representation
  */
 fun hslToRgb(h: Float, s: Float, l: Float): FloatArray {
-    val a = s * minOf(l, 1F - l)
-    val f = fun(n: Int): Float = ((n + h / 30F) % 12).let { k -> l - a * maxOf(minOf(k - 3F, 9F - k, 1F), -1F) }
+    val a = s * minOf(l, 1f - l)
+    val f = fun(n: Int): Float = ((n + h / 30f) % 12).let { k -> l - a * maxOf(minOf(k - 3f, 9f - k, 1f), -1f) }
     return floatArrayOf(f(0), f(8), f(4))
 }

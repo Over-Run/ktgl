@@ -4,12 +4,12 @@ package org.overrun.ktgl.scene
  * @author squid233
  * @since 0.1.0
  */
-interface IBehavior<T : GameObject<T>> {
-    fun onFixedUpdate(block: UpdateCallback<T>)
+interface IBehavior {
+    fun onFixedUpdate(block: UpdateCallback)
 
-    fun onUpdate(block: UpdateCallback<T>)
+    fun onUpdate(block: UpdateCallback)
 
-    fun onLateUpdate(block: UpdateCallback<T>)
+    fun onLateUpdate(block: UpdateCallback)
 }
 
-typealias UpdateCallback<T> = (T.(delta: Double) -> Unit)?
+typealias UpdateCallback = ((delta: Double) -> Unit)?

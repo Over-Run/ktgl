@@ -37,7 +37,7 @@ internal abstract class GLShaderUniform<T> {
 @Serializable
 internal data class GLShaderUniformFloat(
     override val name: String,
-    override val value: Float? = 0F
+    override val value: Float? = 0f
 ) : GLShaderUniform<Float>()
 
 /**
@@ -55,9 +55,9 @@ internal abstract class GLShaderUniformFArr : GLShaderUniform<FloatArray>()
 internal data class GLShaderUniformMat3(
     override val name: String,
     override val value: FloatArray? = floatArrayOf(
-        1F, 0F, 0F,
-        0F, 1F, 0F,
-        0F, 0F, 1F
+        1f, 0f, 0f,
+        0f, 1f, 0f,
+        0f, 0f, 1f
     )
 ) : GLShaderUniformFArr() {
     override fun equals(other: Any?): Boolean {
@@ -90,10 +90,10 @@ internal data class GLShaderUniformMat3(
 internal data class GLShaderUniformMat4(
     override val name: String,
     override val value: FloatArray? = floatArrayOf(
-        1F, 0F, 0F, 0F,
-        0F, 1F, 0F, 0F,
-        0F, 0F, 1F, 0F,
-        0F, 0F, 0F, 1F
+        1f, 0f, 0f, 0f,
+        0f, 1f, 0f, 0f,
+        0f, 0f, 1f, 0f,
+        0f, 0f, 0f, 1f
     )
 ) : GLShaderUniformFArr() {
     override fun equals(other: Any?): Boolean {
@@ -125,7 +125,7 @@ internal data class GLShaderUniformMat4(
 @Serializable
 internal data class GLShaderUniformVec4(
     override val name: String,
-    override val value: FloatArray? = floatArrayOf(0F, 0F, 0F, 0F)
+    override val value: FloatArray? = floatArrayOf(0f, 0f, 0f, 0f)
 ) : GLShaderUniformFArr() {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

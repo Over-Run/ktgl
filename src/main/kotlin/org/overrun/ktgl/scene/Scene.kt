@@ -4,10 +4,8 @@ import org.joml.Vector4f
 import org.lwjgl.opengl.GL11C.glClear
 import org.overrun.ktgl.Project
 import org.overrun.ktgl.gl.GLClearBit
-import org.overrun.ktgl.util.math.ktglModelMat
-import org.overrun.ktgl.util.math.ktglModelviewMat
-import org.overrun.ktgl.util.math.ktglNormalMat
-import org.overrun.ktgl.util.math.ktglProjMat
+import org.overrun.ktgl.io.ICursorPosCallback
+import org.overrun.ktgl.util.math.*
 import org.overrun.ktgl.util.time.Time
 
 /**
@@ -17,31 +15,33 @@ import org.overrun.ktgl.util.time.Time
  * @author squid233
  * @since 0.1.0
  */
-class Scene(val id: String) {
+class Scene @JvmOverloads constructor(
+    val id: String,
+    private val behavior: Behavior = Behavior()
+) : IBehavior by behavior {
     var name: String = id
     val backgroundColor = Vector4f()
     var clearBit = GLClearBit.NONE
-    private val gameObjects = GameObjects()
+    private val gameObjects = GameObjects<GameObject>()
+    private val cameras = GameObjects<BaseCamera>()
     private var customRender: (Scene.(Project) -> Unit)? = null
+    val mainCamera = cameras.add(FreeCamera("main_camera"))
+    var currCamera: BaseCamera? = mainCamera
+    internal var cursorPos: ICursorPosCallback? = null
 
-    class GameObjects {
-        internal val objects = LinkedHashMap<String, GameObjectImpl>()
+    class GameObjects<T : GameObject> {
+        internal val objects = LinkedHashMap<String, T>()
 
-        fun add(name: String): GameObjectImpl {
-            if (objects.containsKey(name)) {
-                return objects[name]!!
-            }
-            return GameObjectImpl().also { objects[name] = it }
-        }
+        fun <U : T> add(u: U): U =
+            u.also { objects[it.id] = it }
 
-        fun add(name: String, block: GameObjectImpl.() -> Unit): GameObjectImpl =
-            add(name).apply(block)
-
-        operator fun String.invoke(block: GameObjectImpl.() -> Unit): GameObjectImpl =
-            add(this, block)
+        operator fun <U : T> U.invoke(block: U.() -> Unit): U =
+            add(this).also(block)
     }
 
-    fun gameObjects(block: GameObjects.() -> Unit) = block(gameObjects)
+    fun gameObjects(block: GameObjects<GameObject>.() -> Unit) = block(gameObjects)
+
+    fun cameras(block: GameObjects<BaseCamera>.() -> Unit) = block(cameras)
 
     fun customRenderer(block: (Scene.(Project) -> Unit)?) {
         customRender = block
@@ -50,20 +50,48 @@ class Scene(val id: String) {
     fun clearNow() = glClear(clearBit.bits)
 
     fun fixedUpdate(delta: Double) {
-        gameObjects.objects.values.forEach { it.behavior?.fixedUpdate(it, delta) }
+        behavior.fixedUpdate(delta)
+        gameObjects.objects.values.forEach { it.behavior?.fixedUpdate(delta) }
     }
 
     fun update(delta: Double) {
-        gameObjects.objects.values.forEach { it.behavior?.update(it, delta) }
+        behavior.update(delta)
+        gameObjects.objects.values.forEach { it.behavior?.update(delta) }
     }
 
     fun lateUpdate(delta: Double) {
-        gameObjects.objects.values.forEach { it.behavior?.lateUpdate(it, delta) }
+        behavior.lateUpdate(delta)
+        gameObjects.objects.values.forEach { it.behavior?.lateUpdate(delta) }
+    }
+
+    fun onCursorPos(block: ICursorPosCallback?) {
+        cursorPos = block
     }
 
     fun renderDefault(project: Project) {
         project.glStateMgr.setClearColor(backgroundColor)
         clearNow()
+
+        currCamera?.apply {
+            if (orthographic) {
+                // TODO: test
+                ktglProjMat.setOrtho(viewportX, viewportW, viewportY, viewportH, zNear, zFar)
+            } else {
+                ktglProjMat.setPerspective(
+                    fov,
+                    aspect.let {
+                        if (it == 0f) project.window.fbWidth.toFloat() / project.window.fbHeight.toFloat()
+                        else aspect
+                    },
+                    zNear,
+                    zFar
+                )
+            }
+            getMatrix(ktglViewMat.identity())
+            project.shaders.values.forEach {
+                it.getProjection()?.set(ktglProjMat)
+            }
+        }
 
         project.glStateMgr.useProgram {
             gameObjects.objects.values.forEach {
@@ -77,7 +105,6 @@ class Scene(val id: String) {
                                 shader.getDeltaTime()?.set(Time.deltaTime.toFloat())
                                 shader.getCurrTime()?.set(Time.time.toFloat())
                             }
-                            shader.getProjection()?.set(ktglProjMat)
                             ktglModelMat.apply {
                                 translation(it.position)
                                     .translate(it.anchor)

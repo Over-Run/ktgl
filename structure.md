@@ -10,7 +10,7 @@ subgraph Start
     show[Show window] --> postStart
 end
 subgraph Running
-    direction TB
+    direction BT
     Timing --> preRunning --> update[Update Scene] --> render[Render scene] -->
     running --> swap[Swap buffers] --> poll[Poll events] --> postRunning
 end

@@ -31,7 +31,7 @@ fun unbindShader() {
 
 fun useShader(shader: GLShader, block: GLShader.() -> Unit) {
     currentGLStateMgr?.useProgram(shader.programId) {
-        shader.block()
+        block(shader)
     }
 }
 
@@ -81,7 +81,7 @@ class GLShader(val id: String) : AutoCloseable {
     private fun getUniform(block: GLShaderUniforms.() -> GLShaderUniform<*>?): GLUniform? {
         val d = data ?: return null
         val uniforms = d.uniforms ?: return null
-        val uniform = uniforms.block() ?: return null
+        val uniform = block(uniforms) ?: return null
         return uniformMap[uniform.name]
     }
 

@@ -4,32 +4,32 @@ package org.overrun.ktgl.scene
  * @author squid233
  * @since 0.1.0
  */
-class Behavior<T : GameObject<T>> : IBehavior<T> {
-    private var fixedUpdate: UpdateCallback<T> = null
-    private var update: UpdateCallback<T> = null
-    private var lateUpdate: UpdateCallback<T> = null
+class Behavior : IBehavior {
+    private var fixedUpdate: UpdateCallback = null
+    private var update: UpdateCallback = null
+    private var lateUpdate: UpdateCallback = null
 
-    fun fixedUpdate(gameObject: T, delta: Double) {
-        fixedUpdate?.invoke(gameObject, delta)
+    fun fixedUpdate(delta: Double) {
+        fixedUpdate?.invoke(delta)
     }
 
-    fun update(gameObject: T, delta: Double) {
-        update?.invoke(gameObject, delta)
+    fun update(delta: Double) {
+        update?.invoke(delta)
     }
 
-    fun lateUpdate(gameObject: T, delta: Double) {
-        lateUpdate?.invoke(gameObject, delta)
+    fun lateUpdate(delta: Double) {
+        lateUpdate?.invoke(delta)
     }
 
-    override fun onFixedUpdate(block: UpdateCallback<T>) {
+    override fun onFixedUpdate(block: UpdateCallback) {
         fixedUpdate = block
     }
 
-    override fun onUpdate(block: UpdateCallback<T>) {
+    override fun onUpdate(block: UpdateCallback) {
         update = block
     }
 
-    override fun onLateUpdate(block: UpdateCallback<T>) {
+    override fun onLateUpdate(block: UpdateCallback) {
         lateUpdate = block
     }
 }

@@ -5,8 +5,8 @@ package org.overrun.ktgl.model
  * @since 0.1.0
  */
 data class Vector2(
-    val x: Float = 0F,
-    val y: Float = 0F
+    val x: Float = 0f,
+    val y: Float = 0f
 )
 
 /**
@@ -14,9 +14,9 @@ data class Vector2(
  * @since 0.1.0
  */
 data class Vector3(
-    val x: Float = 0F,
-    val y: Float = 0F,
-    val z: Float = 0F
+    val x: Float = 0f,
+    val y: Float = 0f,
+    val z: Float = 0f
 )
 
 /**
@@ -29,7 +29,7 @@ data class Vertex(
     val normal: Vector3? = null
 ) {
     constructor(
-        x: Float = 0F, y: Float = 0F, z: Float = 0F,
+        x: Float = 0f, y: Float = 0f, z: Float = 0f,
         u: Float? = null, v: Float? = null,
         nx: Float? = null, ny: Float? = null, nz: Float? = null
     ) : this(

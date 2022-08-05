@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL11C
 import org.lwjgl.system.APIUtil
 import org.overrun.ktgl.gl.GLStateMgr
 import org.overrun.ktgl.gl.shader.GLShader
+import org.overrun.ktgl.io.Input
 import org.overrun.ktgl.io.Window
 import org.overrun.ktgl.scene.Scene
 import org.overrun.ktgl.util.time.Time
@@ -38,7 +39,7 @@ class Project(name: String) : Runnable, AutoCloseable {
 
     private val timer = Timer()
 
-    private val shaders = HashMap<String, GLShader>()
+    val shaders = HashMap<String, GLShader>()
 
     private var errorCallback: ((Int, String) -> Unit)? = null
     private var preStart = { }
@@ -178,7 +179,21 @@ class Project(name: String) : Runnable, AutoCloseable {
             }?.invoke(key, scancode, mods)
         }
         glfwSetFramebufferSizeCallback(window.handle) { _, width, height ->
+            window.fbWidth = width
+            window.fbHeight = height
             GL11C.glViewport(0, 0, width, height)
+        }
+        glfwSetCursorPosCallback(window.handle) { _, x, y ->
+            val lastX = Input.mouseX
+            val lastY = Input.mouseY
+            Input.dtMouseX = x - lastX
+            Input.dtMouseY = y - lastY
+            window.cursorPos?.onCursorPos(lastX, lastY, x, y, Input.dtMouseX, Input.dtMouseY)
+            currScene?.also {
+                this[it].cursorPos?.onCursorPos(lastX, lastY, x, y, Input.dtMouseX, Input.dtMouseY)
+            }
+            Input.mouseX = x
+            Input.mouseY = y
         }
 
         preStart()

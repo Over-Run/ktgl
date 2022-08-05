@@ -46,9 +46,15 @@ class Window(
     var handle: Long = NULL
         private set
 
+    var fbWidth = width
+        internal set
+    var fbHeight = height
+        internal set
+
     internal var keyPress: KeyCallback = null
     internal var keyRelease: KeyCallback = null
     internal var keyRepeat: KeyCallback = null
+    internal var cursorPos: ICursorPosCallback? = null
 
     fun setSize(width: Int, height: Int) {
         this.width = width
@@ -95,6 +101,10 @@ class Window(
         keyRepeat = block
     }
 
+    fun onCursorPos(block: ICursorPosCallback?) {
+        cursorPos = block
+    }
+
     fun makeCtxCurr() = glfwMakeContextCurrent(handle)
 
     /**
@@ -121,7 +131,7 @@ class Window(
     operator fun invoke() {
         handle = glfwCreateWindow(width, height, title, monitor, share)
         if (handle == NULL)
-            throw RuntimeException("Failed to create the GLFW window");
+            throw RuntimeException("Failed to create the GLFW window")
     }
 
     override fun close() {
