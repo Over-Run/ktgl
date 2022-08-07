@@ -1,0 +1,24 @@
+{
+  "name": "Skybox Cubemap Shader",
+  "vertex": "ktgl:shaders/skybox/cubemap",
+  "fragment": "ktgl:shaders/skybox/cubemap",
+  "input": {
+    "position": {
+      "name": "position"
+    }
+  },
+  "uniforms": {
+    "projection": {
+      "name": "ProjMat"
+    },
+    "modelview": {
+      "name": "ModelViewMat"
+    },
+    "colorModulator": {
+      "name": "ColorModulator", "value": [1.0, 1.0, 1.0, 1.0]
+    },
+    "sampler0": {
+      "name": "Skybox"
+    }
+  }
+}

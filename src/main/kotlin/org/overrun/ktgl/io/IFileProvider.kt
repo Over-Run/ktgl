@@ -1,10 +1,11 @@
 package org.overrun.ktgl.io
 
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
-import java.io.Reader
+import org.lwjgl.BufferUtils
+import java.io.*
 import java.net.URL
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
+
 
 /**
  * @author squid233
@@ -23,12 +24,49 @@ fun interface IFileProvider {
         } ?: Result.failure(IllegalStateException("getUrl(name) is null! name: $name"))
     }
 
+    fun resourceToBuffer(resource: String, bufferSize: Int): Result<ByteBuffer> {
+        val url = getUrl(resource) ?: return Result.failure(IOException("Resource not found: $resource"))
+        val file = File(url.file)
+        if (file.isFile) {
+            return Result.success(FileInputStream(file).use {
+                it.channel.use { fc ->
+                    fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size())
+                }
+            })
+        }
+        var buffer = BufferUtils.createByteBuffer(bufferSize)
+        val source = url.openStream() ?: return Result.failure(FileNotFoundException(resource))
+        return source.use {
+            val buf = ByteArray(8192)
+            while (true) {
+                val bytes = it.read(buf)
+                if (bytes == -1) break
+                if (buffer.remaining() < bytes)
+                    buffer = BufferUtils.createByteBuffer(
+                        maxOf(buffer.capacity() * 2, buffer.capacity() - buffer.remaining() + bytes)
+                    ).apply {
+                        put(buffer.flip())
+                    }
+                buffer.put(buf, 0, bytes)
+            }
+            Result.success(buffer.flip())
+        }
+    }
+
     private fun Reader.buildLines(): String = buildString { this@buildLines.forEachLine(::appendLine) }
 
     fun useLines(name: String): String = toStream(name).getOrThrow().bufferedReader().buildLines()
 
     fun useLinesOrNull(name: String): String? =
         toStream(name).getOrNull()?.bufferedReader()?.buildLines()
+
+    fun useLines(name: String, block: (String) -> Unit) {
+        toStream(name).getOrThrow().bufferedReader().forEachLine(block)
+    }
+
+    fun useLinesOrNull(name: String, block: (String) -> Unit) {
+        toStream(name).getOrNull()?.bufferedReader()?.forEachLine(block)
+    }
 
     companion object {
         @JvmField

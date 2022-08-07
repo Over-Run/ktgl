@@ -7,7 +7,7 @@ val ktglProjMat = Matrix4fStack(4)
 val ktglViewMat = Matrix4fStack(32)
 val ktglModelMat = Matrix4fStack(32)
 val ktglModelviewMat = Matrix4fStack(32)
-    get() = field.also { field.set(ktglViewMat).mul(ktglModelMat) }
+    get() = field.apply { set(ktglViewMat).mul(ktglModelMat) }
 val ktglNormalMat = Matrix3fStack(32)
     get() = field.also { ktglModelviewMat.normal(it) }
 

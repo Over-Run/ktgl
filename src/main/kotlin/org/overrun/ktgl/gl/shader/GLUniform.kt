@@ -2,13 +2,16 @@ package org.overrun.ktgl.gl.shader
 
 import org.joml.Matrix3fc
 import org.joml.Matrix4fc
+import org.joml.Vector3fc
 import org.joml.Vector4fc
 import org.lwjgl.opengl.GL20C.*
 import org.lwjgl.system.MemoryUtil.*
 import java.nio.ByteBuffer
 
 enum class GLUniformType(val size: Int, val length: Int, val glName: String) {
+    INT(1, 4, "int"),
     FLOAT(1, 4, "float"),
+    VEC3(3, 12, "vec3"),
     VEC4(4, 16, "vec4"),
     MAT3(9, 36, "mat3"),
     MAT4(16, 64, "mat4");
@@ -36,6 +39,8 @@ class GLUniform(val location: Int, val type: GLUniformType) : AutoCloseable {
         buffer.position(0)
     }
 
+    fun set(x: Int) = set { it.putInt(x) }
+
     fun set(x: Float) = set { it.putFloat(x) }
     fun set(x: Float, y: Float) = set { it.putFloat(x).putFloat(y) }
     fun set(x: Float, y: Float, z: Float) = set { it.putFloat(x).putFloat(y).putFloat(z) }
@@ -43,6 +48,7 @@ class GLUniform(val location: Int, val type: GLUniformType) : AutoCloseable {
 
     fun set(array: FloatArray) = set { array.forEach(it::putFloat) }
 
+    fun set(vec3: Vector3fc) = set(vec3::get)
     fun set(vec4: Vector4fc) = set(vec4::get)
 
     fun set(mat3: Matrix3fc) = set(mat3::get)
@@ -53,7 +59,15 @@ class GLUniform(val location: Int, val type: GLUniformType) : AutoCloseable {
             return
         dirty = false
         when (type) {
+            GLUniformType.INT -> glUniform1i(location, buffer.getInt(0))
             GLUniformType.FLOAT -> glUniform1f(location, buffer.getFloat(0))
+            GLUniformType.VEC3 -> glUniform3f(
+                location,
+                buffer.getFloat(0),
+                buffer.getFloat(4),
+                buffer.getFloat(8)
+            )
+
             GLUniformType.VEC4 -> glUniform4f(
                 location,
                 buffer.getFloat(0),

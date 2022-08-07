@@ -26,6 +26,56 @@ class GLStateMgr {
                 glBindVertexArray(value)
             }
         }
+    var depthTest = false
+        set(value) {
+            if (field != value) {
+                field = value
+                if (value) {
+                    glEnable(GL_DEPTH_TEST)
+                } else {
+                    glDisable(GL_DEPTH_TEST)
+                }
+            }
+        }
+    var depthFunc: Int = GL_LESS
+        set(value) {
+            if (field != value) {
+                field = value
+                glDepthFunc(value)
+            }
+        }
+    var cullFace = false
+        set(value) {
+            if (field != value) {
+                field = value
+                if (value) {
+                    glEnable(GL_CULL_FACE)
+                } else {
+                    glDisable(GL_CULL_FACE)
+                }
+            }
+        }
+    var activeTexture = 0
+        set(value) {
+            if (field != value) {
+                field = value
+                glActiveTexture(GL_TEXTURE0 + value)
+            }
+        }
+    val maxImageUnits = glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
+    private val texturesCubeMap = IntArray(maxImageUnits)
+
+    fun setTextureCubeMap(unit: Int, id: Int) {
+        activeTexture = unit
+        setTextureCubeMap(id)
+    }
+
+    fun setTextureCubeMap(id: Int) {
+        if (texturesCubeMap[activeTexture] != id) {
+            texturesCubeMap[activeTexture] = id
+            glBindTexture(GL_TEXTURE_CUBE_MAP, id)
+        }
+    }
 
     fun useProgram(block: () -> Unit) {
         val prev = program
@@ -34,10 +84,10 @@ class GLStateMgr {
     }
 
     fun useProgram(pId: Int, block: (Int) -> Unit) {
-        useProgram {
-            program = pId
-            block(pId)
-        }
+        val prev = program
+        program = pId
+        block(pId)
+        program = prev
     }
 
     fun useVertexArray(va: Int, block: (Int) -> Unit) {
@@ -45,6 +95,13 @@ class GLStateMgr {
         vertexArray = va
         block(va)
         vertexArray = prev
+    }
+
+    fun useTextureCubeMap(id: Int, block: (Int) -> Unit) {
+        val prev = texturesCubeMap[activeTexture]
+        setTextureCubeMap(id)
+        block(id)
+        setTextureCubeMap(prev)
     }
 
     fun deleteProgram(program: Int) {

@@ -1,7 +1,7 @@
 package org.overrun.ktgl.scene
 
 import org.joml.Vector4f
-import org.lwjgl.opengl.GL11C.glClear
+import org.lwjgl.opengl.GL11C
 import org.overrun.ktgl.Project
 import org.overrun.ktgl.gl.GLClearBit
 import org.overrun.ktgl.io.ICursorPosCallback
@@ -18,10 +18,10 @@ import org.overrun.ktgl.util.time.Time
 class Scene @JvmOverloads constructor(
     val id: String,
     private val behavior: Behavior = Behavior()
-) : IBehavior by behavior {
+) : IBehavior by behavior, AutoCloseable {
     var name: String = id
     val backgroundColor = Vector4f()
-    var clearBit = GLClearBit.NONE
+    var clearBit = GLClearBit.COLOR_DEPTH
     private val gameObjects = GameObjects<GameObject>()
     private val cameras = GameObjects<BaseCamera>()
     private var customRender: (Scene.(Project) -> Unit)? = null
@@ -47,7 +47,8 @@ class Scene @JvmOverloads constructor(
         customRender = block
     }
 
-    fun clearNow() = glClear(clearBit.bits)
+    @JvmOverloads
+    fun clearNow(bits: GLClearBit = clearBit) = GL11C.glClear(bits.bits)
 
     fun fixedUpdate(delta: Double) {
         behavior.fixedUpdate(delta)
@@ -69,8 +70,23 @@ class Scene @JvmOverloads constructor(
     }
 
     fun renderDefault(project: Project) {
-        project.glStateMgr.setClearColor(backgroundColor)
-        clearNow()
+        project.glStateMgr.depthTest = true
+        project.glStateMgr.depthFunc = GL11C.GL_LEQUAL
+        project.glStateMgr.cullFace = true
+        currCamera.also {
+            project.glStateMgr.setClearColor(
+                it?.backgroundColor ?: backgroundColor
+            )
+            if (it != null) {
+                when (it.clearFlags) {
+                    ClearFlags.SKYBOX, ClearFlags.SOLID_COLOR -> clearNow(GLClearBit.COLOR_DEPTH)
+                    ClearFlags.DEPTH_ONLY -> clearNow(GLClearBit.DEPTH)
+                    ClearFlags.NONE -> {}
+                }
+            } else {
+                clearNow()
+            }
+        }
 
         currCamera?.apply {
             if (orthographic) {
@@ -90,9 +106,11 @@ class Scene @JvmOverloads constructor(
             getMatrix(ktglViewMat.identity())
             project.shaders.values.forEach {
                 it.getProjection()?.set(ktglProjMat)
+                it.getDeltaTime()?.set(Time.deltaTime.toFloat())
             }
         }
 
+        // Render opaque objects
         project.glStateMgr.useProgram {
             gameObjects.objects.values.forEach {
                 if (it.visible) {
@@ -100,11 +118,8 @@ class Scene @JvmOverloads constructor(
                     if (model != null) {
                         val shader = it.shader()
                         if (shader != null) {
-                            val changed = shader.bind()
-                            if (changed) {
-                                shader.getDeltaTime()?.set(Time.deltaTime.toFloat())
-                                shader.getCurrTime()?.set(Time.time.toFloat())
-                            }
+                            shader.bind()
+                            shader.getCurrTime()?.set(Time.time.toFloat())
                             ktglModelMat.apply {
                                 translation(it.position)
                                     .translate(it.anchor)
@@ -122,10 +137,23 @@ class Scene @JvmOverloads constructor(
                 }
             }
         }
+
+        // Render skybox
+        currCamera?.apply {
+            if (clearFlags == ClearFlags.SKYBOX) {
+                skybox?.render(project, this@Scene)
+            }
+        }
+
+        // Render transparency objects
     }
 
     fun render(project: Project) = customRender.let {
         if (it != null) it(project)
         else renderDefault(project)
+    }
+
+    override fun close() {
+        currCamera?.skybox?.close()
     }
 }

@@ -7,44 +7,75 @@ import kotlinx.serialization.json.decodeFromStream
 import org.lwjgl.opengl.GL20C.*
 import org.overrun.ktgl.currentGLStateMgr
 import org.overrun.ktgl.io.IFileProvider
+import org.overrun.ktgl.model.VertexElement
 import org.overrun.ktgl.util.Identifier
 import org.overrun.ktgl.util.ResourceType
 import org.overrun.ktgl.util.toFile
-
-const val ATTRIB_POSITION_LOC = 0
-const val ATTRIB_COLOR_LOC = 1
-const val ATTRIB_TEX_COORD_LOC = 2
-const val ATTRIB_NORMAL_LOC = 5
-
-fun bindShader(shader: GLShader): Boolean {
-    val stateMgr = currentGLStateMgr
-    if (stateMgr != null) {
-        stateMgr.program = shader.programId
-        return true
-    }
-    return false
-}
 
 fun unbindShader() {
     currentGLStateMgr?.program = 0
 }
 
-fun useShader(shader: GLShader, block: GLShader.() -> Unit) {
-    currentGLStateMgr?.useProgram(shader.programId) {
-        block(shader)
-    }
-}
-
 object BuiltinShaders {
     const val POSITION_ID = "position"
+    const val SKYBOX_CUBEMAP_ID = "skybox-cubemap"
 
     @JvmField
     val position = lazy {
-        GLShader(POSITION_ID).loadBuiltin("ktgl:shaders/builtin/position.json")
+        GLShader(POSITION_ID).loadBuiltin("shaders/builtin/position.json")
+    }
+
+    @JvmField
+    val skyboxCubemap = lazy {
+        GLShader(SKYBOX_CUBEMAP_ID).loadBuiltin("shaders/skybox/cubemap.json")
     }
 }
 
 /**
+ * ## The GL Shader
+ *
+ * The GL shader use to render scenes.
+ *
+ * Every game objects must be bind to a shader else they will not be rendered, even they are visible.
+ *
+ * ### JSON Format
+ *
+ * Any mistakes will cause exception.
+ *
+ * ```json
+ * {
+ *   "name": "Shader Name",
+ *   "vertex": "namespace:path/to/shader",
+ *   "fragment": "namespace:path/to/shader",
+ *   "input": {
+ *     "position": {
+ *       "name": "AttribNameInShader"
+ *     }
+ *   },
+ *   // optional
+ *   "uniforms": {
+ *     // optional
+ *     "uniformName": {
+ *       "name": "UniformNameInShader",
+ *       // optional
+ *       "value": Any
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * ### Available Uniforms
+ *
+ * - `type name`
+ * - `mat4 projection`
+ * - `mat4 modelview`
+ * - `mat4 normal`
+ * - `vec4 colorModulator`
+ * - `float deltaTime`
+ * - `float currTime`
+ * - `gsampler sampler0`
+ *
+ * @param[id] the shader id
  * @author squid233
  * @since 0.1.0
  */
@@ -68,10 +99,6 @@ class GLShader(val id: String) : AutoCloseable {
         return false
     }
 
-    fun unbind() {
-        currentGLStateMgr?.program = 0
-    }
-
     fun use(block: GLShader.() -> Unit) {
         currentGLStateMgr?.useProgram(programId) {
             block()
@@ -91,6 +118,7 @@ class GLShader(val id: String) : AutoCloseable {
     fun getColorModulator(): GLUniform? = getUniform { colorModulator }
     fun getDeltaTime(): GLUniform? = getUniform { deltaTime }
     fun getCurrTime(): GLUniform? = getUniform { currTime }
+    fun getSampler0(): GLUniform? = getUniform { sampler0 }
 
     fun uploadUniforms() = uniformMap.values.forEach(GLUniform::upload)
 
@@ -110,6 +138,9 @@ class GLShader(val id: String) : AutoCloseable {
             throw IllegalStateException("Uniform $type $name not found!")
         }
     }
+
+    private fun GLShaderUniformInt.create(type: GLUniformType) =
+        create(type, GLUniform::set)
 
     private fun GLShaderUniformFloat.create(type: GLUniformType) =
         create(type, GLUniform::set)
@@ -156,7 +187,10 @@ class GLShader(val id: String) : AutoCloseable {
         )
         glAttachShader(programId, vsh)
         glAttachShader(programId, fsh)
-        glBindAttribLocation(programId, ATTRIB_POSITION_LOC, data.input.position.name)
+        data.input.apply {
+            glBindAttribLocation(programId, VertexElement.POSITION.location, position.name)
+            color0?.apply { glBindAttribLocation(programId, VertexElement.COLOR0.location, name) }
+        }
         glLinkProgram(programId)
         if (glGetProgrami(programId, GL_LINK_STATUS) != GL_TRUE)
             throw IllegalStateException("Failed to link program $programId: ${glGetProgramInfoLog(programId)}")
@@ -172,6 +206,7 @@ class GLShader(val id: String) : AutoCloseable {
             colorModulator?.create(GLUniformType.VEC4)
             deltaTime?.create(GLUniformType.FLOAT)
             currTime?.create(GLUniformType.FLOAT)
+            sampler0?.create(GLUniformType.INT)
         }
 
         return this

@@ -3,10 +3,24 @@ package org.overrun.ktgl.scene
 import org.joml.Math.cosFromSin
 import org.joml.Math.sin
 import org.joml.Matrix4f
+import org.joml.Vector4f
 import org.overrun.ktgl.util.math.Direction
 import org.overrun.ktgl.util.math.RAD360F
 import org.overrun.ktgl.util.math.RAD60F
 import org.overrun.ktgl.util.math.RAD90F
+
+/**
+ * The camera clear flags.
+ *
+ * @author squid233
+ * @since 0.1.0
+ */
+enum class ClearFlags {
+    SKYBOX,
+    SOLID_COLOR,
+    DEPTH_ONLY,
+    NONE
+}
 
 /**
  * @author squid233
@@ -14,6 +28,7 @@ import org.overrun.ktgl.util.math.RAD90F
  */
 interface ICamera {
     fun getMatrix(mat: Matrix4f): Matrix4f
+    fun getMatrixNoTrans(mat: Matrix4f): Matrix4f
 }
 
 /**
@@ -35,6 +50,11 @@ abstract class BaseCamera(id: String) : ICamera, GameObject(id) {
     var viewportY = 0f
     var viewportW = 1f
     var viewportH = 1f
+
+    var clearFlags = ClearFlags.SOLID_COLOR
+    val backgroundColor = Vector4f(49f / 255f, 77f / 255f, 121f / 255f, 1f)
+
+    var skybox: ISkybox? = null
 }
 
 /**
@@ -78,8 +98,9 @@ class FreeCamera(id: String) : BaseCamera(id) {
         else if (this.pitch < -RAD90F) this.pitch = -RAD90F
     }
 
-    override fun getMatrix(mat: Matrix4f): Matrix4f {
-        return mat.rotateX(-pitch).rotateY(-yaw)
-            .translate(-position.x, -position.y, -position.z)
-    }
+    override fun getMatrix(mat: Matrix4f): Matrix4f =
+        getMatrixNoTrans(mat).translate(-position.x, -position.y, -position.z)
+
+    override fun getMatrixNoTrans(mat: Matrix4f): Matrix4f =
+        mat.rotateX(-pitch).rotateY(-yaw)
 }

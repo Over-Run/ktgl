@@ -6,6 +6,7 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11C
 import org.lwjgl.system.APIUtil
 import org.overrun.ktgl.gl.GLStateMgr
+import org.overrun.ktgl.gl.shader.BuiltinShaders
 import org.overrun.ktgl.gl.shader.GLShader
 import org.overrun.ktgl.io.Input
 import org.overrun.ktgl.io.Window
@@ -36,10 +37,17 @@ class Project(name: String) : Runnable, AutoCloseable {
     val hints = GLFWHints()
     val window = Window(title = name)
     var currScene: String? = null
+        set(value) {
+            if (field != value) {
+                field?.also { this[it].close() }
+            }
+            field = value
+        }
 
     private val timer = Timer()
 
     val shaders = HashMap<String, GLShader>()
+    private val resources = ArrayList<AutoCloseable>()
 
     private var errorCallback: ((Int, String) -> Unit)? = null
     private var preStart = { }
@@ -57,7 +65,10 @@ class Project(name: String) : Runnable, AutoCloseable {
         block()
     }
 
-    fun createBuiltinShader(shader: Lazy<GLShader>) = createShader(shader.value)
+    fun <T : AutoCloseable> load(t: T): T = t.also { resources.add(it) }
+
+    fun createLazyShader(shader: Lazy<GLShader>) = createShader(shader.value)
+    fun createBuiltinShader(shader: BuiltinShaders.() -> Lazy<GLShader>) = createLazyShader(shader(BuiltinShaders))
     fun createShader(id: String): GLShader = createShader(GLShader(id))
 
     fun createShader(shader: GLShader): GLShader {
@@ -231,7 +242,11 @@ class Project(name: String) : Runnable, AutoCloseable {
 
     override fun close() {
         close.invoke()
-        shaders.values.forEach(GLShader::close)
+        resources.forEach { it.close() }
+        currScene?.also {
+            this[it].close()
+        }
+        shaders.values.forEach { it.close() }
         window.close()
         glfwTerminate()
         glfwSetErrorCallback(null)?.close()
